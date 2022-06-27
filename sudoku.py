@@ -173,7 +173,6 @@ def generate_random(dim, difficulty, seed=None):
     sudoku = Sudoku(dim)
     sudoku.create_random(difficulty)
     print(sudoku)
-    exit()
 
 
 def solve_image(file, size):
@@ -213,4 +212,3 @@ def solve_image(file, size):
 
 if __name__ == '__main__':
     solve_image("20220625_221322.jpg", 9)
-
