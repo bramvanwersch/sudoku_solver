@@ -121,8 +121,9 @@ class Sudoku:
                     else:
                         row.append(char)
                 matrix.append(row)
+        orig_matrix = [r.copy() for r in matrix]
         sudoku = Sudoku(len(matrix[0]), matrix=matrix)
-        return sudoku
+        return sudoku, orig_matrix
 
     @classmethod
     def from_image(cls, file, size):
@@ -135,14 +136,18 @@ class Sudoku:
                     matrix[rindex][cindex] = cls.EMPTY_CHAR
                 else:
                     matrix[rindex][cindex] = str(value)
+        orig_matrix = [r.copy() for r in matrix]
         sudoku = Sudoku(len(matrix[0]), matrix=matrix)
-        return sudoku
+        return sudoku, orig_matrix
 
     def to_file(self, file):
         with open(file, "w") as f:
             for row in self._rows:
                 clear_row = "".join(map(str, row)).replace(" ", "-")
                 f.write(clear_row + "\n")
+
+    def get_matrix(self):
+        return self._rows
 
     def __str__(self):
         # just for visual
@@ -172,25 +177,38 @@ def generate_random(dim, difficulty, seed=None):
 
 
 def solve_image(file, size):
+    # just to not slow down when using other cases
     import digits_from_image
     import cv2
 
-    s = Sudoku.from_image(file, size)
+    s, matrix = Sudoku.from_image(file, size)
     s.solve()
     original = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
-    original = cv2.resize(original, (500, 500))
+    original = cv2.resize(original, (450, 450))
 
     processed = digits_from_image.pre_process_image(original)
     colored = cv2.imread(file, cv2.IMREAD_COLOR)
     colored = cv2.resize(colored, (450, 450))
+
     corners = digits_from_image.find_corners_of_largest_polygon(processed)
     cropped_colored = digits_from_image.crop_and_warp(colored, corners)
+    cv2.imshow('', cropped_colored)
 
     # add the numbers
-    for row in s._rows:
-        for value in row:
-            cv2.putText(cropped_colored, value, (0, 0))
-            cv2.showImage()
+    square_width = 50
+    square_height = square_width
+    for rindex, row in enumerate(s.get_matrix()):
+        for cindex, value in enumerate(row):
+            if matrix[rindex][cindex] == Sudoku.EMPTY_CHAR:
+                # coordinate is bottom left
+                (label_width, label_height), baseline = cv2.getTextSize(value, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
+                position = (int(cindex * square_width + 0.5 * square_width - 0.5 * label_width),
+                            int(rindex * square_height + square_height - 0.5 * label_height))
+                cv2.putText(cropped_colored, value, position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.imshow('', cropped_colored)
+
+    cv2.waitKey(0)  # waits until a key is pressed
+    cv2.destroyAllWindows()  # destroys the window showing image
 
 
 if __name__ == '__main__':
