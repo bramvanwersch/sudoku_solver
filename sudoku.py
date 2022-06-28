@@ -191,7 +191,7 @@ def solve_image(file, size):
 
     corners = digits_from_image.find_corners_of_largest_polygon(processed)
     cropped_colored = digits_from_image.crop_and_warp(colored, corners)
-    cv2.imshow('', cropped_colored)
+    cropped_colored = cv2.resize(cropped_colored, (450, 450))
 
     # add the numbers
     square_width = 50
